@@ -2,10 +2,6 @@
 
 A custom relation for when stock relations aren't enough.
 
-## Disclaimer
-
-THIS IS A PROOF OF CONCEPT AND SHOULD NOT BE CONSIDERED FOR PRODUCTION USE. EAGER LOADING IS INCOMPLETE AT THE MOMENT. SEE [#3](https://github.com/johnnyfreeman/laravel-custom-relation/issues/3).
-
 ## Use this if...
 
 * None of the stock Relations fit the bill. (BelongsToManyThrough, etc)
@@ -66,7 +62,7 @@ class Permission
 First, make sure your models are using the `HasCustomRelations` trait. Then, define custom relations like this.
 
 ```php
-use LaravelCustomRelation\HasCustomRelations;
+use LaravelCustomRelation/HasCustomRelations;
 
 class User
 {
@@ -103,7 +99,7 @@ class User
 ```
 
 ```php
-use LaravelCustomRelation\HasCustomRelations;
+use LaravelCustomRelation/HasCustomRelations;
 
 class Permission
 {

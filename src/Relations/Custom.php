@@ -25,6 +25,20 @@ class Custom extends Relation
     protected $eagerConstraints;
 
     /**
+     * The getResultKey callback
+     *
+     * @var \Illuminate\Database\Eloquent\Model
+     */
+    protected $getResultKey;
+
+    /**
+     * Whether the relation should return an object or a collection
+     *
+     * @var boolean
+     */
+    protected $resultIsPlural;
+
+    /**
      * Create a new belongs to relationship instance.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
@@ -32,10 +46,13 @@ class Custom extends Relation
      * @param  string  $baseConstraints
      * @return void
      */
-    public function __construct(Builder $query, Model $parent, Closure $baseConstraints, Closure $eagerConstraints)
+    public function __construct(Builder $query, Model $parent, Closure $baseConstraints, Closure $eagerConstraints, Closure $getModelKey, Closure $getResultKey, $resultIsPlural = true)
     {
         $this->baseConstraints = $baseConstraints;
         $this->eagerConstraints = $eagerConstraints;
+        $this->getModelKey = $getModelKey;
+        $this->getResultKey = $getResultKey;
+        $this->resultIsPlural = $resultIsPlural;
 
         parent::__construct($query, $parent);
     }
@@ -48,6 +65,11 @@ class Custom extends Relation
     public function addConstraints()
     {
         call_user_func($this->baseConstraints, $this);
+    }
+
+    public function getKeys(array $models, $key = null)
+    {
+        return parent::getKeys($models, $key);
     }
 
     /**
@@ -93,14 +115,30 @@ class Custom extends Relation
         // children back to their parent using the dictionary and the keys on the
         // the parent models. Then we will return the hydrated models back out.
         foreach ($models as $model) {
-            if (isset($dictionary[$key = $model->getKey()])) {
+            if (isset($dictionary[$key = call_user_func($this->getModelKey, $this, $model)])) {
                 $collection = $this->related->newCollection($dictionary[$key]);
+
+                if (!$this->resultIsPlural) {
+                    $collection = $collection->first();
+                }
 
                 $model->setRelation($relation, $collection);
             }
         }
 
         return $models;
+    }
+
+    protected function buildDictionary(Collection $results)
+    {
+        // First we will build a dictionary of child models keyed by the foreign key
+        // of the relation so that we will easily and quickly match them to their
+        // parents without having a possibly slow inner loops for every models.
+        $dictionary = [];
+        foreach ($results as $result) {
+            $dictionary[call_user_func($this->getResultKey, $this, $result)][] = $result;
+        }
+        return $dictionary;
     }
 
     /**
